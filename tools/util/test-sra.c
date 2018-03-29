@@ -3821,8 +3821,8 @@ rc_t CC KMain(int argc, char *argv[]) {
 
         if (!prms.full) {
             KDiagnose * test = NULL;
-            rc_t r2 = KDiagnoseMakeExt ( & test, prms . cfg,
-                                          prms . knsMgr,   prms . vMgr );
+            rc_t r2 = KDiagnoseMakeExt ( & test, prms . cfg, prms . knsMgr,
+                                         prms . vMgr, Quitting );
             if ( r2 != 0 ) {
                 if ( rc == 0 )
                     rc = r2;
