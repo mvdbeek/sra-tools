@@ -516,16 +516,15 @@ void _MainInit(Main *self, int argc, char *argv[], int *argi, char **argv2)
 
     if (hasTestArg) {
         if ( tests == 0 )
-            self->tests &= ~eNoTestArg;
+            self->tests &= ~ eNoTestArg;
         else
             self->quickTests = tests;
     }
-    else {
+    else
         self->tests |= eNoTestArg;
-    }
 
     if ( self->quickTests == 0 )
-        self->quickTests = KDIAGN_ALL;
+        self->quickTests = KDIAGN_ALL & ~ KDIAGN_TRY_TO_WARN;
 
     MainPrint(self);
 }
@@ -3728,9 +3727,69 @@ static rc_t MainFromArgs ( Main * self, const Args * args ) {
 
     return rc;
 }
+
 static
 void CC c ( EKDiagTestState state, const KDiagnoseTest * test, void * data )
 {}
+
+static rc_t Diagnose ( const Main * self, const Args * args ) {
+    rc_t rc = 0;
+
+    KDiagnose * test = NULL;
+    
+    assert ( self );
+
+    rc = KDiagnoseMakeExt ( & test, self -> cfg, self -> knsMgr,
+                                    self -> vMgr, Quitting );
+    if ( rc == 0 ) {
+        rc_t r2 = 0;
+
+        const char * root = "Diagnose";
+
+/*const KDiagnoseTestDesc * desc = NULL;
+rc_t rd = KDiagnoseGetDesc ( test, & desc );*/
+
+        KDiagnoseTestHandlerSet(test,c,0);
+        KDiagnoseLogHandlerSetKOutMsg ( test );
+
+        if (self -> xml)
+            OUTMSG(("  <%s>\n", root));
+
+        {
+            uint32_t params = 0;
+            const char * acc = NULL;
+
+            const char * root = "Tests";
+            if (self -> xml)
+                OUTMSG(("    <%s>\n", root));
+
+            if ( r2 == 0 )
+                r2 = ArgsParamCount ( args, & params );
+
+            if ( r2 == 0 && params > 0)
+                 r2 = ArgsParamValue ( args, 0, ( const void ** ) & acc );
+
+            if ( r2 == 0 )
+                r2 = KDiagnoseAcc ( test, acc, 0, true, true, true,
+                                    self -> quickTests );
+
+            if (self -> xml)
+                OUTMSG(("    </%s>\n", root));
+        }
+
+        if (self -> xml)
+            OUTMSG(("  </%s>\n", root));
+
+        if ( rc == 0 )
+            rc = r2;
+    }
+
+    KDiagnoseRelease ( test );
+    test = NULL;
+
+    return rc;
+}
+
 rc_t CC KMain(int argc, char *argv[]) {
     rc_t rc = 0;
     uint32_t pcount = 0;
@@ -3819,26 +3878,8 @@ rc_t CC KMain(int argc, char *argv[]) {
                 MainNetwotk(&prms, NULL, prms.xml ? "  " : "", eol);
         }
 
-        if (!prms.full) {
-            KDiagnose * test = NULL;
-            rc_t r2 = KDiagnoseMakeExt ( & test, prms . cfg, prms . knsMgr,
-                                         prms . vMgr, Quitting );
-            if ( r2 != 0 ) {
-                if ( rc == 0 )
-                    rc = r2;
-            }
-            else {
-                const KDiagnoseTestDesc * desc = NULL;
-                rc_t rd = KDiagnoseGetDesc ( test, & desc );
-                KDiagnoseTestHandlerSet(test,c,0);
-                KDiagnoseLogHandlerSetKOutMsg ( test );
-                r2 = KDiagnoseAdvanced ( test, prms.quickTests );
-                if ( rc == 0 )
-                    rc = r2;
-            }
-            KDiagnoseRelease ( test );
-            test = NULL;
-        }
+        if (!prms.full)
+            rc = Diagnose ( & prms, args );
 
         if (rc == 0) {
             rc = ArgsOptionCount(args, OPTION_LIB, &pcount);
@@ -3887,6 +3928,8 @@ rc_t CC KMain(int argc, char *argv[]) {
 
             if (MainHasTest(&prms, eNcbiReport))
                 ReportForceFinalize();
+
+            rc = Diagnose ( & prms, args );
         }
 
         if (!prms.full) {
