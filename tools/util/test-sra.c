@@ -97,27 +97,29 @@ VFS_EXTERN rc_t CC VResolverProtocols ( VResolver * self,
 #define HTTP_VERSION 0x01010000
 
 typedef enum {
-    eCfg            = 1,
-    eResolve        = 2,
-    eDependMissing  = 4,
-    eDependAll      = 8,
-    eNetwork       = 16,
-    eVersion       = 32,
-    eNewVersion    = 64,
-    eOpenTable    = 128,
-    eOpenDB       = 256,
-    eType         = 512,
-    eNcbiReport  = 1024,
-    eOS          = 2048,
-    eAscp        = 4096,
-    eAscpVerbose = 8192,
-    eNgs        = 16384,
-    ePrintFile  = 32768,
-    eAll        = 65536,
-    eNoTestArg = 131072,
+    eCfg              = 1,
+    eResolve          = 2,
+    eDependMissing    = 4,
+    eDependAll        = 8,
+    eNetwork       = 0x10,
+    eVersion       = 0x20,
+    eNewVersion    = 0x40,
+    eOpenTable     = 0x80,
+    eOpenDB       = 0x100,
+    eType         = 0x200,
+    eNcbiReport   = 0x400,
+    eOS           = 0x800,
+    eAscp        = 0x1000,
+    eAscpVerbose = 0x2000,
+    eNgs         = 0x4000,
+    ePrintFile   = 0x8000,
+    eRepositors  = 0x10000,
+    eAnalyse     = 0x20000,
+    eAll         = 0x40000,
+    eNoTestArg   = 0x80000,
 } Type;
 typedef uint64_t TTest;
-static const char TESTS[] = "crdDwsSoOtnufFgpa";
+static const char TESTS[] = "crdDwsSoOtnufFgpAa";
 typedef struct {
     KConfig *cfg;
     KDirectory *dir;
@@ -154,7 +156,7 @@ rc_t CC UsageSummary(const char *prog_name) {
         "  quick check mode:\n"
         "   %s -Q [ name... ]\n\n"
         "  full test mode:\n"
-        "   %s [+acdDfFgnoOprsStuw] [-acdDfFgnoOprsStuw] [-R] [-N] [-C]\n"
+        "   %s [+acdDfFgnoOprRsStuw] [-acdDfFgnoOprRsStuw] [-R] [-N] [-C]\n"
         "            [-X <type>] [-L <path>] [options] name [ name... ]\n"
         , prog_name, prog_name);
 }
@@ -191,6 +193,7 @@ rc_t CC Usage(const Args *args) {
         "  F - print verbose ascp information\n"
         "  t - print object types\n"
         "  g - print NGS information\n"
+        "  R - print repositories information\n"
         "  p - print content of resolved remote HTTP file\n"
         "  w - run network test\n"
     );
@@ -203,6 +206,8 @@ rc_t CC Usage(const Args *args) {
         "  D - call ListDependencies(all)\n"
         "  o - call VDBManagerOpenTableRead(object)\n"
         "  O - call VDBManagerOpenDBRead(object)\n"
+        "  A - run Analysys and print recommendations how to fix found problems"
+                                                                            "\n"
         "  a - all tests except VDBManagerOpen...Read and verbose ascp\n\n");
     if (rc == 0 && rc2 != 0) {
         rc = rc2;
@@ -3905,7 +3910,8 @@ rc_t CC KMain(int argc, char *argv[]) {
                 MainNetwotk ( & prms, "SRR000001",
                               prms . xml ? "  " : "", eol );
 
-            MainRepositories ( & prms, "  " );
+            if ( MainHasTest ( & prms, eRepositors ) )
+                MainRepositories ( & prms, "  " );
 
             for (i = 0; i < params; ++i) {
                 const char *name = NULL;
@@ -3929,7 +3935,8 @@ rc_t CC KMain(int argc, char *argv[]) {
             if (MainHasTest(&prms, eNcbiReport))
                 ReportForceFinalize();
 
-            rc = Diagnose ( & prms, args );
+            if ( MainHasTest ( & prms, eAnalyse ) )
+                rc = Diagnose ( & prms, args );
         }
 
         if (!prms.full) {
