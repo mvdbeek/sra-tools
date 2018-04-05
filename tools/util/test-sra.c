@@ -1728,9 +1728,8 @@ rc_t MainDepend(const Main *self, const char *name, bool missing)
     assert(self);
     eol = self->xml ? "<br/>\n" : "\n";
 
-    if (self->xml) {
-        OUTMSG(("<%s>\n", root));
-    }
+    if (self->xml)
+        OUTMSG (( "  <%s type=\"%s\">\n", root, missing ? "missing" : "all" ));
 
     if (rc == 0) {
         rc = VDBManagerOpenDBRead(self->mgr, &db, self->schema, "%s", name);
@@ -1759,6 +1758,8 @@ rc_t MainDepend(const Main *self, const char *name, bool missing)
 
     if (rc == 0) {
         rc = VDBDependenciesCount(dep, &count);
+        if (self->xml)
+            OUTMSG ( ( "    " ) );
         if (rc != 0) {
             OUTMSG(("VDBDependenciesCount(%s, %s) = %R\n",
                 name, missing ? "missing" : "all", rc));
@@ -1779,16 +1780,14 @@ rc_t MainDepend(const Main *self, const char *name, bool missing)
             const char *seqId = NULL;
             KPathType type = kptNotFound;
 
-            if (self->xml) {
-                OUTMSG(("<%s>\n", root));
-            }
+            if (self->xml)
+                OUTMSG(("    <%s>\n", root));
 
             OUTMSG((" %6d\t", i + 1));
 
             rc2 = VDBDependenciesSeqId(dep, &seqId, i);
-            if (rc2 == 0) {
+            if (rc2 == 0)
                 OUTMSG(("seqId=%s,", seqId));
-            }
             else {
                 OUTMSG(("VDBDependenciesSeqId(%s, %s, %i)=%R ",
                     name, missing ? "missing" : "all", i, rc2));
@@ -1798,9 +1797,8 @@ rc_t MainDepend(const Main *self, const char *name, bool missing)
             }
 
             rc2 = VDBDependenciesName(dep, &s, i);
-            if (rc2 == 0) {
+            if (rc2 == 0)
                 OUTMSG(("name=%s,", s));
-            }
             else {
                 OUTMSG(("VDBDependenciesName(%s, %s, %i)=%R ",
                     name, missing ? "missing" : "all", i, rc2));
@@ -1810,9 +1808,8 @@ rc_t MainDepend(const Main *self, const char *name, bool missing)
             }
 
             rc2 = VDBDependenciesCircular(dep, &b, i);
-            if (rc2 == 0) {
+            if (rc2 == 0)
                 OUTMSG(("circular=%s,", b ? "true" : "false"));
-            }
             else {
                 OUTMSG(("VDBDependenciesCircular(%s, %s, %i)=%R ",
                     name, missing ? "missing" : "all", i, rc2));
@@ -1837,9 +1834,8 @@ rc_t MainDepend(const Main *self, const char *name, bool missing)
             }
 
             rc2 = VDBDependenciesLocal(dep, &b, i);
-            if (rc2 == 0) {
+            if (rc2 == 0)
                 OUTMSG(("local=%s,", b ? "local" : "remote"));
-            }
             else {
                 OUTMSG(("VDBDependenciesLocal(%s, %s, %i)=%R ",
                     name, missing ? "missing" : "all", i, rc2));
@@ -1849,9 +1845,8 @@ rc_t MainDepend(const Main *self, const char *name, bool missing)
             }
 
             rc2 = VDBDependenciesPath(dep, &s, i);
-            if (rc2 == 0) {
+            if (rc2 == 0)
                 OUTMSG(("%s\tpathLocal=%s,", eol, s == NULL ? "notFound" : s));
-            }
             else {
                 OUTMSG(("VDBDependenciesPath(%s, %s, %i)=%R ",
                     name, missing ? "missing" : "all", i, rc2));
@@ -1945,21 +1940,18 @@ rc_t MainDepend(const Main *self, const char *name, bool missing)
                 MainResolve(self, NULL, seqId, NULL, &remoteSz, true);
             }
 
-            if (self->xml) {
-                OUTMSG(("</%s>\n", root));
-            }
-            else {
+            if (self->xml)
+                OUTMSG(("    </%s>\n", root));
+            else
                 OUTMSG(("%s", eol));
-            }
         }
     }
 
     RELEASE(VDBDependencies, dep);
     RELEASE(VDatabase, db);
 
-    if (self->xml) {
-        OUTMSG(("</%s>\n", root));
-    }
+    if (self->xml)
+        OUTMSG(("  </%s>\n", root));
 
     return rc;
 }
@@ -2196,7 +2188,8 @@ static rc_t _KartPrintNumbered(const Kart *self, bool xml) {
     return 0;
 }
 
-static rc_t ipv4_endpoint_to_string(char *buffer, size_t buflen, KEndPoint *ep)
+static rc_t ipv4_endpoint_to_string ( char * buffer, size_t buflen,
+                                      KEndPoint * ep)
 {
 	uint32_t b[4];
 	b[0] = ( ep->u.ipv4.addr & 0xFF000000 ) >> 24;
@@ -2207,7 +2200,8 @@ static rc_t ipv4_endpoint_to_string(char *buffer, size_t buflen, KEndPoint *ep)
 						   b[0], b[1], b[2], b[3], ep->u.ipv4.port );
 }
 
-static rc_t ipv6_endpoint_to_string(char *buffer, size_t buflen, KEndPoint *ep)
+static rc_t ipv6_endpoint_to_string ( char * buffer, size_t buflen,
+                                      KEndPoint * ep)
 {
 	uint32_t b[8];
 	b[0] = ( ep->u.ipv6.addr[ 0  ] << 8 ) | ep->u.ipv6.addr[ 1  ];
@@ -2223,12 +2217,14 @@ static rc_t ipv6_endpoint_to_string(char *buffer, size_t buflen, KEndPoint *ep)
 		b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], ep->u.ipv6.port );
 }
 
-static rc_t ipc_endpoint_to_string(char *buffer, size_t buflen, KEndPoint *ep)
+static rc_t ipc_endpoint_to_string ( char * buffer, size_t buflen,
+                                     KEndPoint * ep)
 {
 	return string_printf( buffer, buflen, NULL, "ipc: %s", ep->u.ipc_name );
 }
 
-rc_t endpoint_to_string( char * buffer, size_t buflen, struct KEndPoint * ep )
+rc_t endpoint_to_string ( char * buffer, size_t buflen,
+                          struct KEndPoint * ep )
 {
 	rc_t rc;
 	switch( ep->type )
@@ -2361,6 +2357,74 @@ static rc_t read_stream_into_databuffer(
 	return rc;
 }
 
+static
+rc_t _KHttpRequestAddPostParams ( KClientHttpRequest * self,
+    const KConfig * kfg, uint32_t ver_major, uint32_t ver_minor,
+    const char * acc, const char * protocol, const char *eol )
+{
+    rc_t rc = 0;
+    if (rc == 0) {
+        const char param[] = "object";
+        rc = KHttpRequestAddPostParam( self, "%s=||%s", param, acc );
+        if (rc != 0)
+            OUTMSG(("KHttpRequestAddPostParam(%s)=%R%s", param, rc, eol));
+    }
+    if (rc == 0) {
+        const char param[] = "accept-proto";
+        rc = KHttpRequestAddPostParam( self, "%s=%s", param, protocol );
+        if (rc != 0)
+            OUTMSG(("KHttpRequestAddPostParam(%s)=%R%s", param, rc, eol));
+    }
+    if (rc == 0) {
+        const char param[] = "version";
+        rc = KHttpRequestAddPostParam
+            ( self, "%s=%u.%u", param, ver_major, ver_minor );
+        if (rc != 0)
+            OUTMSG(("KHttpRequestAddPostParam(%s)=%R%s", param, rc, eol));
+    }
+    if (rc == 0) {
+        rc_t r1 = 0;
+        const KConfigNode * nProtected = NULL;
+        KNamelist * names = NULL;
+        uint32_t count = 0;
+        const char path [] = "/repository/user/protected";
+        if ( KConfigOpenNodeRead ( kfg, & nProtected, path ) != 0 )
+            return 0;
+        r1 = KConfigNodeListChildren ( nProtected, & names );
+        if ( r1 == 0 )
+            r1 = KNamelistCount ( names, & count );
+        if ( r1 == 0 ) {
+            uint32_t i = 0;
+            for ( i = 0; i < count; ++ i ) {
+                const KConfigNode * node = NULL;
+                String * tic = NULL;
+                const char * name = NULL;
+                r1 = KNamelistGet ( names, i, & name );
+                if ( r1 != 0 )
+                    continue;
+                r1 = KConfigNodeOpenNodeRead ( nProtected, & node,
+                                               "%s/download-ticket", name );
+                if ( r1 != 0 )
+                    continue;
+                r1 = KConfigNodeReadString ( node, & tic );
+                if ( r1 == 0 ) {
+                    const char param[] = "tic";
+                    rc = KHttpRequestAddPostParam ( self, "%s=%S", param, tic );
+                    if ( rc != 0 )
+                        OUTMSG ( ( "KHttpRequestAddPostParam(%s)=%R%s",
+                            param, rc, eol ) );
+                    free ( tic );
+                    tic = NULL;
+                }
+                RELEASE ( KConfigNode, node  );
+            }
+        }
+        RELEASE ( KConfigNode, nProtected  );
+    }
+
+    return rc;
+}
+
 static rc_t call_cgi(const Main *self, const char *cgi_url,
     uint32_t ver_major, uint32_t ver_minor, const char *protocol,
     const char *acc, KDataBuffer *databuffer, const char *eol)
@@ -2375,28 +2439,9 @@ static rc_t call_cgi(const Main *self, const char *cgi_url,
         OUTMSG(
             ("KNSManagerMakeReliableClientRequest(%s)=%R%s", cgi_url, rc, eol));
     }
-    if (rc == 0) {
-        const char param[] = "acc";
-        rc = KHttpRequestAddPostParam( req, "%s=%s", param, acc);
-        if (rc != 0) {
-            OUTMSG(("KHttpRequestAddPostParam(%s)=%R%s", param, rc, eol));
-        }
-    }
-    if (rc == 0) {
-        const char param[] = "accept-proto";
-        rc = KHttpRequestAddPostParam( req, "%s=%s", param, protocol);
-        if (rc != 0) {
-            OUTMSG(("KHttpRequestAddPostParam(%s)=%R%s", param, rc, eol));
-        }
-    }
-    if (rc == 0) {
-        const char param[] = "version";
-        rc = KHttpRequestAddPostParam
-            (req, "%s=%u.%u", param, ver_major, ver_minor);
-        if (rc != 0) {
-            OUTMSG(("KHttpRequestAddPostParam(%s)=%R%s", param, rc, eol));
-        }
-    }
+    if (rc == 0)
+        rc = _KHttpRequestAddPostParams ( req, self -> cfg, ver_major,
+                                          ver_minor, acc, protocol, eol );
     if (rc == 0) {
         rc = KClientHttpRequestFormatMsg
             ( req, b, sizeof b, "POST", NULL );
@@ -2443,8 +2488,38 @@ static rc_t call_cgi(const Main *self, const char *cgi_url,
     return rc;
 }
 
+static char * processResponse ( char * response, size_t size ) {
+    int n = 0;
+
+    size_t i = 0;
+    for ( i = 0; i < size; ++ n ) {
+        char * p = string_chr ( response + i, size - i, '|' );
+        if ( p == NULL )
+            return NULL;
+
+        i = p - response + 1;
+
+        if ( n == 5 ) {
+            const char * e = NULL;
+
+            for ( ; response [ i ] != '|' && i < size; ++i )
+                response [ i ] = 'x';
+
+            if ( response [ i ] == '|' ) {
+                ++ i;
+                p = response + i;
+                e = string_chr ( p, size - i, '|' );
+            }
+
+            return e == NULL ? NULL : string_dup ( p, e - p );
+        }
+    }
+
+    return NULL;
+}
+
 static rc_t perform_cgi_test ( const Main * self,
-    const char * eol, const char * acc )
+    const char * eol, const char * acc, char ** url )
 {
     rc_t rc = 0;
     const char root[] = "Cgi";
@@ -2463,11 +2538,12 @@ static rc_t perform_cgi_test ( const Main * self,
         const char root[] = "Response";
         rc = call_cgi ( self,
             "https://www.ncbi.nlm.nih.gov/Traces/names/names.cgi",
-            1, 2, "http,https", acc, & databuffer, eol );
+            3, 0, "http,https", acc, & databuffer, eol );
         time = KTimeMsStamp() - start_time;
         if (rc == 0) {
-            const char *start = databuffer.base;
+            char *start = databuffer.base;
             size_t size = KDataBufferBytes(&databuffer);
+            * url = processResponse ( start, size );
             if (self->xml) {
                 OUTMSG(("    <%s time=\"%d ms\">%.*s</%s>\n",
                     root, time, size, start, root));
@@ -2487,7 +2563,7 @@ static rc_t perform_cgi_test ( const Main * self,
 
 static
 rc_t MainRanges ( const Main * self, const char * arg, const char * bol,
-    bool get, bool https )
+    bool get, bool https, const String * aHost, const String * aPath )
 {
     rc_t rc = 0;
     const char * method = "Head";
@@ -2496,6 +2572,7 @@ rc_t MainRanges ( const Main * self, const char * arg, const char * bol,
         method = "Get";
     if ( https )
         protocol = "https";
+    assert ( aHost && aPath );
     if ( self -> xml )
         OUTMSG ( ( "%s    <%s protocol=\"%s\">\n", bol, method, protocol ) );
     {
@@ -2508,27 +2585,37 @@ rc_t MainRanges ( const Main * self, const char * arg, const char * bol,
         char * b = buffer;
         size_t sizeof_b = sizeof buffer;
         char * allocated = NULL;
-        String host;
-        CONST_STRING ( & host, "sra-download.ncbi.nlm.nih.gov" );
+        String dHost;
+        const String * host = aHost -> len > 0 && aPath -> len > 0 ? aHost
+                                                                   : & dHost;
+        CONST_STRING ( & dHost, "sra-download.ncbi.nlm.nih.gov" );
         if ( self -> xml )
-            OUTMSG ( ( "%s      <%s host=\"%S\">\n", bol, root, & host ) );
+            OUTMSG ( ( "%s      <%s host=\"%S\">\n", bol, root, host ) );
         else
             OUTMSG ( ( "%s %s host=\"%S\" protocol=\"%s\"\n",
-                       method, root, & host, protocol ) );
+                       method, root, host, protocol ) );
         if ( https )
             rc = KNSManagerMakeClientHttps
-                ( self -> knsMgr, & http, NULL, HTTP_VERSION, & host, 0 );
+                ( self -> knsMgr, & http, NULL, HTTP_VERSION, host, 0 );
         else
             rc = KNSManagerMakeClientHttp
-                ( self -> knsMgr, & http, NULL, HTTP_VERSION, & host, 0 );
+                ( self -> knsMgr, & http, NULL, HTTP_VERSION, host, 0 );
         if ( rc == 0 ) {
-            rc = KClientHttpMakeRequest( http, & req, "/srapub/%s", arg );
-            if ( rc != 0 )
-                OUTMSG ( ( "KClientHttpMakeRequest(%S,/srapub/%s)=%R\n",
-                           & host, arg, rc ) );
+            if ( aPath -> len == 0 ) {
+                rc = KClientHttpMakeRequest( http, & req, "/srapub/%s", arg );
+                if ( rc != 0 )
+                    OUTMSG ( ( "KClientHttpMakeRequest(%S,/srapub/%s)=%R\n",
+                               host, arg, rc ) );
+            }
+            else {
+                rc = KClientHttpMakeRequest( http, & req, "%S", aPath );
+                if ( rc != 0 )
+                    OUTMSG ( ( "KClientHttpMakeRequest(%S/%S)=%R\n",
+                               host, aPath, rc ) );
+            }
         }
         else
-            OUTMSG ( ( "KClientHttpMakeRequest(%S)=%R\n", & host, rc ) );
+            OUTMSG ( ( "KClientHttpMakeRequest(%S)=%R\n", host, rc ) );
         if ( get && rc == 0 ) {
             rc = KClientHttpRequestByteRange ( req, 0, 4096 );
             if ( rc != 0 )
@@ -2700,21 +2787,44 @@ static rc_t MainNetwotk ( const Main * self,
             );
     }
 
-    if (arg != NULL)
-        perform_cgi_test(self, eol, arg);
+    if (arg != NULL) {
+        rc_t rc = 0;
+        char * url = NULL;
+        VPath * vpath = NULL;
+        String host;
+        String path;
 
-    if ( arg != NULL ) {
+        perform_cgi_test(self, eol, arg, &url);
+
+        if ( url != NULL ) {
+            rc = VFSManagerMakePath ( self -> vMgr, & vpath, url );
+            if ( rc == 0 ) {
+                rc = VPathGetHost ( vpath, & host );
+                if ( rc != 0 )
+                    host . len = host . size = 0;
+                else {
+                    rc = VPathGetPath ( vpath, & path );
+                    if ( rc != 0 )
+                        path . len = path . size = 0;
+                }
+            }
+        }
+
         const char root [] = "Ranges";
         if ( self -> xml )
             OUTMSG ( ( "%s  <%s>\n", bol, root ) );
         else
             OUTMSG ( ( "\n%s\n", root ) );
-        MainRanges ( self, arg, bol, true , false );
-        MainRanges ( self, arg, bol, true , true  );
-        MainRanges ( self, arg, bol, false, false );
-        MainRanges ( self, arg, bol, false, true  );
+        MainRanges ( self, arg, bol, true , false, & host, & path );
+        MainRanges ( self, arg, bol, true , true , & host, & path );
+        MainRanges ( self, arg, bol, false, false, & host, & path );
+        MainRanges ( self, arg, bol, false, true , & host, & path );
         if ( self-> xml )
             OUTMSG ( ( "%s  </%s>\n", bol, root ) );
+
+        RELEASE ( VPath, vpath );
+        free ( url );
+        url = NULL;
     }
 
     if ( self -> xml )
@@ -3451,7 +3561,9 @@ static rc_t PrintLib ( const char * path, bool xml ) {
 }
 
 /******************************************************************************/
-static rc_t MainFreeSpace ( const Main * self, const KDirectory * dir ) {
+static
+rc_t MainFreeSpace ( const Main * self, const KDirectory * dir )
+{
     uint64_t free_bytes_available = 0;
     uint64_t total_number_of_bytes = 0;
     rc_t rc = KDirectoryGetDiskFreeSpace ( dir, & free_bytes_available,
@@ -3476,7 +3588,9 @@ static rc_t MainFreeSpace ( const Main * self, const KDirectory * dir ) {
     return rc;
 }
 
-static rc_t MainRepository ( const Main * self, const KRepository * repo ) {
+static
+rc_t MainRepository ( const Main * self, const KRepository * repo )
+{
     const char tag [] = "User";
     char buffer [ PATH_MAX ] = "";
     size_t size = 0;
@@ -3733,8 +3847,8 @@ static rc_t MainFromArgs ( Main * self, const Args * args ) {
     return rc;
 }
 
-static
-void CC c ( EKDiagTestState state, const KDiagnoseTest * test, void * data )
+static void CC c ( EKDiagTestState state,
+                   const KDiagnoseTest * test, void * data )
 {}
 
 static rc_t Diagnose ( const Main * self, const Args * args ) {
